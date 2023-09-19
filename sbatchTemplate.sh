@@ -11,11 +11,11 @@
 #SBATCH --cpus-per-task=4           # Number of CPU to request for the job
 #SBATCH --mem=64GB                   # How much memory does your job require?
 #SBATCH --gres=gpu:4                # Do you require GPUS? If not delete this line
-#SBATCH --time=02-00:00:00          # How long to run the job for? Jobs exceed this time will be terminated
+#SBATCH --time=05-00:00:00          # How long to run the job for? Jobs exceed this time will be terminated
                                     # Format <DD-HH:MM:SS> eg. 5 days 05-00:00:00
                                     # Format <DD-HH:MM:SS> eg. 24 hours 1-00:00:00 or 24:00:00
 #SBATCH --mail-type=BEGIN,END,FAIL  # When should you receive an email?
-#SBATCH --output=/common/home/users/y/yingfu.lim.2022         # Where should the log files go?
+#SBATCH --output=/common/home/users/y/yingfu.lim.2022/%u.%j.out         # Where should the log files go?
                                     # You must provide an absolute path eg /common/home/module/username/
                                     # If no paths are provided, the output file will be placed in your current working directory
 
@@ -50,4 +50,4 @@ source ~/myenv/bin/activate
 pip3 install -r requirements.txt
 
 # Submit your job to the cluster
-srun --gres=gpu:1 bash running_scripts/fine_tuning/train_logs_ad.sh
+srun --gres=gpu:4 bash running_scripts/fine_tuning/train_logs_ad.sh
