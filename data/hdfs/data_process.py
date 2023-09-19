@@ -180,8 +180,8 @@ def df_to_file(df, file_name):
 
 if __name__ == "__main__":
     # 1. parse HDFS log
-    # log_format = '<Date> <Time> <Pid> <Level> <Component>: <Content>'  # HDFS log format
-    # parser(input_dir, output_dir, log_file, log_format, 'drain')
-    # mapping()
-    # hdfs_sampling(log_structured_file)
+    log_format = '<Date> <Time> <Pid> <Level> <Component>: <Content>'  # HDFS log format
+    parser(input_dir, output_dir, log_file, log_format, 'drain')
+    mapping()
+    hdfs_sampling(log_structured_file)
     generate_train_test(log_sequence_file)
