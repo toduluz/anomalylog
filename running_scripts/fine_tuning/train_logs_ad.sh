@@ -7,7 +7,7 @@ DATASET_NAME_1='hdfs'
 DATASET_NAME_2='bgl'
 DATASET_NAME_3='tbird'
 
-python3 data/bgl/data_process.py
+python3 data/${DATASET_NAME_2}/data_process.py
 
 python3 models/hat/convert_roberta_to_htf.py --layout ${LAYOUT} --max_sentences ${MAX_SENTENCES} --max_sentence_length ${MAX_SENTENCE_LENGTH} \
 
