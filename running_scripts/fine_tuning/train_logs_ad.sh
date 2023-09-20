@@ -6,12 +6,9 @@ MAX_SENTENCE_LENGTH=64
 DATASET_NAME_1='hdfs'
 DATASET_NAME_2='bgl'
 DATASET_NAME_3='tbird'
-
-python3 data/${DATASET_NAME_2}/data_process.py
-
 python3 models/hat/convert_roberta_to_htf.py --layout ${LAYOUT} --max_sentences ${MAX_SENTENCES} --max_sentence_length ${MAX_SENTENCE_LENGTH} \
 
-python3 -m torch.distributed.run --nproc_per_node 4 evaluation/run_logs_ad.py \
+python3 -m torch.distributed.run --nproc_per_node 2 evaluation/run_logs_ad.py \
     --model_name_or_path data/PLMs/hat-${LAYOUT}-roberta-${MAX_SENTENCES}-${MAX_SENTENCE_LENGTH}-${MODEL_MAX_LENGTH} \
     --dataset_name data/${DATASET_NAME_2} \
     --output_dir data/PLMs/hat/${LAYOUT}-roberta-${MAX_SENTENCES}-${MAX_SENTENCE_LENGTH}-${MODEL_MAX_LENGTH}/${DATASET_NAME_2}/loss3-mlm-shuf-rev-mlm40-win50\
@@ -30,8 +27,8 @@ python3 -m torch.distributed.run --nproc_per_node 4 evaluation/run_logs_ad.py \
     --do_predict \
     --logging_strategy steps \
     --logging_steps .1 \
-    --per_device_train_batch_size 4 \
-    --per_device_eval_batch_size 4 \
+    --per_device_train_batch_size 1 \
+    --per_device_eval_batch_size 1 \
     --gradient_accumulation_steps 1 \
     --eval_accumulation_steps 1 \
     --max_seq_length ${MODEL_MAX_LENGTH} \
@@ -39,7 +36,7 @@ python3 -m torch.distributed.run --nproc_per_node 4 evaluation/run_logs_ad.py \
     --metric_for_best_model 'auroc' \
     --load_best_model_at_end \
     --overwrite_output_dir \
-    --max_steps 100000 \
+    --max_steps 10000 \
     # --max_train_samples 32 \
     # --max_eval_samples 32 \
     # --max_predict_samples 32 \
