@@ -222,7 +222,7 @@ if __name__ == "__main__":
     #########
     # Count #
     #########
-    count_anomaly()
+    # count_anomaly()
 
     ##################
     # Transformation #

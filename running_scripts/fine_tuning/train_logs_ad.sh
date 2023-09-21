@@ -37,7 +37,7 @@ accelerate launch evaluation/run_logs_ad.py \
     --load_best_model_at_end \
     --overwrite_output_dir \
     --max_steps 1000000 \
-    # --max_train_samples 100000 \
+    --max_train_samples 100000 \
     # --max_eval_samples 32 \
     # --max_predict_samples 32 \
     # --num_train_epochs 10 \
