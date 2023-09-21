@@ -228,7 +228,7 @@ if __name__ == "__main__":
     # count anomaly
     ########
     # count_anomaly(data_dir + log_file)
-    count_anomaly(data_dir + sample_log_file)
+    # count_anomaly(data_dir + sample_log_file)
     # sys.exit()
 
     ##########
@@ -244,7 +244,7 @@ if __name__ == "__main__":
     # data preprocess
     df["Label"] = df["Label"].apply(lambda x: int(x != "-"))
 
-    df['datetime'] = pd.to_datetime(df["Date"] + " " + df['Time'], format='%Y-%m-%d %H:%M:%S')
+    df['datetime'] = pd.to_datetime(df["Date"] + " " + df['Time'], format='%Y.%m.%d %H:%M:%S')
     df['timestamp'] = df["datetime"].values.astype(np.int64) // 10 ** 9
     df['deltaT'] = df['datetime'].diff() / np.timedelta64(1, 's')
     df['deltaT'].fillna(0)
