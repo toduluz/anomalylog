@@ -7,3 +7,5 @@ tqdm>=4.62.0
 nltk>=3.7.0
 pandas
 numpy
+accelerate
+fairscale
