@@ -46,7 +46,6 @@ from models.hat import HATConfig, HATTokenizer,  HATModelForLogsPreTraining
 # from models.longformer import LongformerTokenizer, LongformerModelForSentenceClassification
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, top_k_accuracy_score, roc_auc_score
 from language_modelling.data_collator import DataCollatorForLogsPreTraining
-from accelerate import Accelerator
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 check_min_version("4.17.0")
@@ -322,9 +321,6 @@ def main():
             revision=model_args.model_revision,
             use_auth_token=True if model_args.use_auth_token else None,
         )
-    # tokenizer.is_fast
-    accelerator = Accelerator()
-    model = accelerator.prepare(model)
     # else:
     #     config = AutoConfig.from_pretrained(
     #         model_args.model_name_or_path,

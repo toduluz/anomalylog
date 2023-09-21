@@ -137,3 +137,6 @@ logs/
 # Logs Dataset
 .log
 *.csv
+
+#PLM Folder
+PLMs/
