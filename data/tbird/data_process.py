@@ -299,7 +299,7 @@ if __name__ == "__main__":
 
     print("test size {}".format(len(test)))
     print("test anomaly {} %".format(len(test[test["labels"] == 1]) / len(test) *100))
-    validation.to_csv(output_dir + "test.csv", index=False)
+    test.to_csv(output_dir + "test.csv", index=False)
 
     ####################################################################################################################################################################
 
