@@ -36,7 +36,7 @@
 # Purge the environment, load the modules we require.
 # Refer to https://violet.smu.edu.sg/origami/module/ for more information
 module purge
-module load Python/3.11.4
+module load Python/3.7.12 
 
 # Create a virtual environment
 # python3 -m venv ~/myenv
