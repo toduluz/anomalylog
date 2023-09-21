@@ -29,8 +29,6 @@ accelerate launch evaluation/run_logs_ad.py \
     --logging_steps .1 \
     --per_device_train_batch_size 1 \
     --per_device_eval_batch_size 1 \
-    --per_device_train_batch_size 1 \
-    --per_device_eval_batch_size 1 \
     --gradient_accumulation_steps 1 \
     --eval_accumulation_steps 1 \
     --max_seq_length ${MODEL_MAX_LENGTH} \
