@@ -228,6 +228,7 @@ if __name__ == "__main__":
     # count anomaly
     ########
     count_anomaly(data_dir + log_file)
+    count_anomaly(data_dir + sample_log_file)
     # sys.exit()
 
     ##########
