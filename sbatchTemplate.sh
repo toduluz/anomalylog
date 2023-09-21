@@ -15,7 +15,7 @@
                                     # Format <DD-HH:MM:SS> eg. 5 days 05-00:00:00
                                     # Format <DD-HH:MM:SS> eg. 24 hours 1-00:00:00 or 24:00:00
 #SBATCH --mail-type=BEGIN,END,FAIL  # When should you receive an email?
-#SBATCH --output=/common/home/users/y/yingfu.lim.2022/%u.%j.out         # Where should the log files go?
+#SBATCH --output=/common/home/users/y/yingfu.lim.2022/anomalylog/%u.%j.out         # Where should the log files go?
                                     # You must provide an absolute path eg /common/home/module/username/
                                     # If no paths are provided, the output file will be placed in your current working directory
 
@@ -36,7 +36,7 @@
 # Purge the environment, load the modules we require.
 # Refer to https://violet.smu.edu.sg/origami/module/ for more information
 module purge
-module load Python/3.7.12
+module load Python/3.11.4
 
 # Create a virtual environment
 # python3 -m venv ~/myenv
@@ -44,7 +44,7 @@ module load Python/3.7.12
 
 # This command assumes that you've already created the environment previously
 # We're using an absolute path here. You may use a relative path, as long as SRUN is execute in the same working directory
-source ~/myenv/bin/activate
+source ~/anomalylog/myenv/bin/activate
 
 # Find out which GPU you are using
 srun whichgpu

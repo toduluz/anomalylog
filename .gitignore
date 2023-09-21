@@ -134,6 +134,7 @@ dmypy.json
 
 # Log files
 logs/
+*.out
 
 # Logs Dataset
 .log
