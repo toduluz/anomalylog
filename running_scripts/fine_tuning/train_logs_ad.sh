@@ -10,8 +10,8 @@ python3 models/hat/convert_roberta_to_htf.py --layout ${LAYOUT} --max_sentences 
 
 accelerate launch evaluation/run_logs_ad.py \
     --model_name_or_path data/PLMs/hat-${LAYOUT}-roberta-${MAX_SENTENCES}-${MAX_SENTENCE_LENGTH}-${MODEL_MAX_LENGTH} \
-    --dataset_name data/${DATASET_NAME_3} \
-    --output_dir data/PLMs/hat/${LAYOUT}-roberta-${MAX_SENTENCES}-${MAX_SENTENCE_LENGTH}-${MODEL_MAX_LENGTH}/${DATASET_NAME_3}/loss3-mlm-shuf-rev-mlm40-win50\
+    --dataset_name data/${DATASET_NAME_1} \
+    --output_dir data/PLMs/hat/${LAYOUT}-roberta-${MAX_SENTENCES}-${MAX_SENTENCE_LENGTH}-${MODEL_MAX_LENGTH}/${DATASET_NAME_1}/loss3-mlm-shuf-rev-mlm40-win50\
     --do_train \
     --learning_rate 1e-4 \
     --lr_scheduler_type linear \
