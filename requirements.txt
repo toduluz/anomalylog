@@ -9,3 +9,4 @@ pandas
 numpy
 accelerate
 fairscale
+regex
