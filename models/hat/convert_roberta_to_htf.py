@@ -36,7 +36,6 @@ def convert_roberta_to_htf():
     # load pre-trained bert model and tokenizer
     roberta_model = AutoModelForMaskedLM.from_pretrained(ROBERTA_CHECKPOINT)
     tokenizer = AutoTokenizer.from_pretrained(ROBERTA_CHECKPOINT, model_max_length=MAX_SENTENCE_LENGTH * MAX_SENTENCES)
-    print(tokenizer.is_fast)
 
     # load dummy config and change specifications
     roberta_config = roberta_model.config

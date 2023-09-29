@@ -45,7 +45,7 @@ from transformers.utils.versions import require_version
 from models.hat import HATConfig, HATTokenizer,  HATModelForLogsPreTraining
 # from models.longformer import LongformerTokenizer, LongformerModelForSentenceClassification
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, top_k_accuracy_score, roc_auc_score
-from language_modelling.data_collator import DataCollatorForLogsPreTraining
+from data_collator import DataCollatorForLogsPreTraining
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 check_min_version("4.17.0")
@@ -159,6 +159,7 @@ class DataTrainingArguments:
     dataset_config_name: Optional[str] = field(
         default=None, metadata={"help": "The configuration name of the dataset to use (via the datasets library)."}
     )
+    num_workers: Optional[int] = field(default=None, metadata={"help": "Number of workers used for code evaluation."})
     server_ip: Optional[str] = field(default=None, metadata={"help": "For distant debugging."})
     server_port: Optional[str] = field(default=None, metadata={"help": "For distant debugging."})
 
@@ -258,10 +259,6 @@ def main():
     # In distributed training, the load_dataset function guarantees that only one local process can concurrently
     # download the dataset.
     # Downloading and loading xnli dataset from the hub.
-
-    def convert_to_list(examples):
-        examples["text"] = examples["text"].split("|")
-        return examples
     
     if training_args.do_train:
         train_dataset = load_dataset(
@@ -271,8 +268,6 @@ def main():
             # data_dir=data_args.dataset_name,
             cache_dir=model_args.cache_dir,
         )
-        # train_dataset = train_dataset.map(convert_to_list)
-        # print(train_dataset['text'])
 
     if training_args.do_eval:
         eval_dataset = load_dataset(
@@ -282,7 +277,6 @@ def main():
             # data_dir=data_args.dataset_name,
             cache_dir=model_args.cache_dir,
         )
-        # eval_dataset = eval_dataset.map(convert_to_list)
 
     if training_args.do_predict:
         predict_dataset = load_dataset(
@@ -292,7 +286,6 @@ def main():
             # data_dir=data_args.dataset_name,
             cache_dir=model_args.cache_dir,
         )
-        # predict_dataset = predict_dataset.map(convert_to_list)
 
     # Load pretrained model and tokenizer
     # In distributed training, the .from_pretrained methods guarantee that only one local process can concurrently
@@ -373,7 +366,7 @@ def main():
         secondary_labels = []
         tertiary_labels = []
         for example_idx, input_ids in enumerate(batch['input_ids']):
-
+            
             #throw dice
             to_shuffle = False
             to_reverse = False
@@ -391,12 +384,7 @@ def main():
             secondary_positions = sentence_positions.copy()
             tertiary_positions = sentence_positions.copy()
 
-            #secondary
-            # if n_sentences > 1:
-            #     swap_idx = np.random.randint(0, max(1, n_sentences-2))
-            #     secondary_positions[swap_idx], secondary_positions[swap_idx+1] = secondary_positions[swap_idx+1], secondary_positions[swap_idx]
-
-            #tertiary
+            # secondary and tertiary
             if to_shuffle:
                 random.shuffle(secondary_positions)
             if to_reverse:
@@ -406,7 +394,7 @@ def main():
             temp_input_ids = []
             temp_attention_mask = []
 
-            #original
+            # original
             for idx in sentence_positions:
                 temp_input_ids.extend(batch['input_ids'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
                 temp_attention_mask.extend(batch['attention_mask'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
@@ -416,7 +404,7 @@ def main():
             temp_input_ids.extend([config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
             temp_attention_mask.extend([config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
 
-            #secondary
+            # secondary
             for idx in secondary_positions:
                 temp_input_ids.extend(batch['input_ids'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
                 temp_attention_mask.extend(batch['attention_mask'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
@@ -424,7 +412,7 @@ def main():
             temp_input_ids.extend([config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
             temp_attention_mask.extend([config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
 
-            #tertiary
+            # tertiary
             for idx in tertiary_positions:
                 temp_input_ids.extend(batch['input_ids'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
                 temp_attention_mask.extend(batch['attention_mask'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
@@ -434,7 +422,7 @@ def main():
             batch_attention_mask.append(temp_attention_mask +
                                            [config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
             
-            #token_type_ids for all
+            # token_type_ids for all
             batch_token_type_ids.append([0] * data_args.max_seq_length * 3)
 
             # # Fix sentence delimiters for Longformer
@@ -482,6 +470,7 @@ def main():
         tertiary_labels = []
         for example_idx, input_ids in enumerate(batch['input_ids']):
 
+
             # count true sentences
             sentence_ids = input_ids[::config.max_sentence_length]
             n_sentences = sum(np.asarray(sentence_ids) != config.pad_token_id)
@@ -494,7 +483,7 @@ def main():
             temp_input_ids = []
             temp_attention_mask = []
 
-            #original
+            # original
             for idx in sentence_positions:
                 temp_input_ids.extend(batch['input_ids'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
                 temp_attention_mask.extend(batch['attention_mask'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
@@ -504,7 +493,7 @@ def main():
             temp_input_ids.extend([config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
             temp_attention_mask.extend([config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
 
-            #secondary
+            # secondary
             for idx in secondary_positions:
                 temp_input_ids.extend(batch['input_ids'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
                 temp_attention_mask.extend(batch['attention_mask'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
@@ -512,7 +501,7 @@ def main():
             temp_input_ids.extend([config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
             temp_attention_mask.extend([config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
 
-            #tertiary
+            # tertiary
             for idx in tertiary_positions:
                 temp_input_ids.extend(batch['input_ids'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
                 temp_attention_mask.extend(batch['attention_mask'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
@@ -522,7 +511,7 @@ def main():
             batch_attention_mask.append(temp_attention_mask +
                                            [config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
             
-            #token_type_ids for all
+            # token_type_ids for all
             batch_token_type_ids.append([0] * data_args.max_seq_length * 3)
 
             # # Fix sentence delimiters for Longformer
@@ -542,9 +531,9 @@ def main():
             # tmp_labels = np.pad(tmp_labels, ((0, num_pad_sentences), (0, 0)))
             # secondary_labels.append(tmp_labels)
             # print(secondary_labels)
-            secondary_labels.append([1., 0.])
+            secondary_labels.append([1., 0.] if examples['labels'][example_idx] == 0 else [0., 1.])
             
-            tertiary_labels.append([1., 0.])
+            tertiary_labels.append([1., 0.] if examples['labels'][example_idx] == 0 else [0., 1.])
 
         batch['input_ids'] = batch_input_ids
         batch['attention_mask'] = batch_attention_mask
@@ -564,6 +553,7 @@ def main():
                 batched=True,
                 load_from_cache_file=not data_args.overwrite_cache,
                 desc="Running tokenizer on train dataset",
+                num_proc=data_args.num_workers,
             )
         # Log a few random samples from the training set:
         for index in random.sample(range(len(train_dataset)), 3):
@@ -579,8 +569,9 @@ def main():
                 batched=True,
                 load_from_cache_file=not data_args.overwrite_cache,
                 desc="Running tokenizer on validation dataset",
+                num_proc=data_args.num_workers,
             )
-
+    
     if training_args.do_predict:
         if data_args.max_predict_samples is not None:
             max_predict_samples = min(len(predict_dataset), data_args.max_predict_samples)
@@ -591,7 +582,29 @@ def main():
                 batched=True,
                 load_from_cache_file=not data_args.overwrite_cache,
                 desc="Running tokenizer on prediction dataset",
+                num_proc=data_args.num_workers,
             )
+
+    # train_len = len(train_dataset['input_ids'])
+    # eval_len = len(eval_dataset['input_ids'])
+    # predict_len = len(predict_dataset['input_ids'])
+    # train_count = 0
+    # eval_count = 0
+    # predict_count = 0
+    # with open("data/example.txt", "r") as file:
+    # # Read the first 100 lines
+    #     for i, line in enumerate(file):
+    #         if i < train_len:
+    #             number = int(line.strip())
+    #             train_count += number
+    #         elif i < train_len+eval_len:
+    #             number = int(line.strip())
+    #             eval_count += number
+    #         else:
+    #             number = int(line.strip())
+    #             predict_count += number
+    # print(f"Avg Train Tokens: {train_count/train_len}, Avg Eval Tokens: {eval_count/eval_len}, Avg Predict Tokens: {predict_count/predict_len}")
+
 
     def preprocess_logits_for_metrics(logits, labels):
             if isinstance(logits, tuple):
@@ -600,7 +613,7 @@ def main():
                 mlm_logits = logits[3]
                 secondary_logits = logits[4]
                 tertiary_logits = logits[5]
-            mlm_indices = torch.topk(mlm_logits, k=5, dim=-1)[1]
+            mlm_indices = torch.topk(mlm_logits, k=3, dim=-1)[1]
             # print(mlm_logits.shape)
             # print(sent_order_logits.shape)
             return (mlm_indices, secondary_logits, tertiary_logits)
@@ -616,7 +629,7 @@ def main():
         # tertiary_labels = p.label_ids[3]
         logs_labels = p.label_ids[0]
 
-        k = 5
+        k = 3
         # Create an empty list to store intermediate results
         mlm_labels = mlm_labels[:, :, np.newaxis].repeat(k, axis=2)
         top_k_list = []
@@ -632,7 +645,7 @@ def main():
             if total <= 0:
                 count += 1
             top_k_list.append(tokens / total if total > 0 else 1.0)
-
+        print(top_k_list)
         print('*' * 40)
         print(count)
         print('*' * 40)
@@ -697,7 +710,7 @@ def main():
         compute_metrics=compute_metrics,
         tokenizer=tokenizer,
         data_collator=data_collator,
-        callbacks=[EarlyStoppingCallback(early_stopping_patience=3)]
+        # callbacks=[EarlyStoppingCallback(early_stopping_patience=3)]
     )
 
     # Training

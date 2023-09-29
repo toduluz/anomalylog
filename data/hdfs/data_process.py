@@ -140,16 +140,24 @@ def generate_train_test(hdfs_sequence_file):
     seq = seq[["text", "labels"]]
     # print(type(seq["text"][0]))
 
-    train_ratio = 0.7
-    val_ratio = 0.1
+    train_ratio = 0.8
+    # val_ratio = 0.1
 
     seq_len = len(seq)
     train_len = int(seq_len * train_ratio)
-    val_len = int(seq_len * val_ratio)
+    # val_len = int(seq_len * val_ratio)
     train = seq[:train_len]
-    train = train[train["labels"] == 0]
-    validation = seq[train_len:train_len+val_len]
-    test = seq[train_len+val_len:]
+    train_normal = train[train["labels"] == 0]
+    train_abnormal = train[train["labels"] == 1]
+    train_sample_len = len(train_normal) - 4500
+    train = train_normal[:train_sample_len]
+    # train = train[train["labels"] == 0]
+    
+    validation = pd.concat([train_normal[train_sample_len:], train_abnormal[:500]], axis=0)
+    validation = validation.sample(frac=1, random_state=42)
+    # validation = seq[train_len:train_len+val_len]
+
+    test = seq[train_len:]
 
     # train.rename(columns={"EventSequence":"text", "Label":"labels"}, inplace=True)
     # validation.rename(columns={"EventSequence":"text", "Label":"labels"}, inplace=True)

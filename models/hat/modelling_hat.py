@@ -1877,13 +1877,7 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
             config.classifier_dropout if config.classifier_dropout is not None else config.hidden_dropout_prob
         )
         self.dropout = nn.Dropout(classifier_dropout)
-        # self.linear_secondary = nn.Linear(config.hidden_size, 1)
-        # self.act_lin_secondary = nn.Tanh()
-        # self.dropout_lin_secondary = nn.Dropout(p=0.1)
         self.classifier_secondary = nn.Linear(config.max_sentences * config.hidden_size, config.num_labels)
-        # self.linear_tertiary = nn.Linear(config.hidden_size, 1)
-        # self.act_lin_tertiary = nn.Tanh()
-        # self.dropout_lin_tertiary = nn.Dropout(p=0.1)
         self.classifier_tertiary = nn.Linear(config.max_sentences * config.hidden_size, config.num_labels)
 
         self.softmax = nn.Softmax(dim=1)
@@ -1891,7 +1885,6 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
         self.max_sentences = config.max_sentences
         self.max_sentence_length = config.max_sentence_length
         self.hidden_size = config.hidden_size
-        # self.num_labels = config.num_labels
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -1970,17 +1963,11 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
         secondary_prediction_scores = None
         secondary_outputs = self.sentencizer(secondary_sequence_output)
         secondary_outputs = self.dropout(secondary_outputs)
-        # secondary_outputs = self.linear_secondary(secondary_outputs)
-        # secondary_outputs = self.act_lin_secondary(secondary_outputs)
-        # secondary_outputs = self.dropout_lin_secondary(secondary_outputs)
         secondary_prediction_scores = self.classifier_secondary(secondary_outputs.view(-1, self.max_sentences * self.hidden_size))
         
         tertiary_prediction_scores = None
         tertiary_outputs = self.sentencizer(tertiary_sequence_output)
         tertiary_outputs = self.dropout(tertiary_outputs)
-        # tertiary_outputs = self.linear_tertiary(tertiary_outputs)
-        # tertiary_outputs = self.act_lin_tertiary(tertiary_outputs)
-        # tertiary_outputs = self.dropout_lin_tertiary(tertiary_outputs)
         tertiary_prediction_scores = self.classifier_tertiary(tertiary_outputs.view(-1, self.max_sentences * self.hidden_size))
 
         total_loss = None

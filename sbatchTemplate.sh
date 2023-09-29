@@ -8,8 +8,8 @@
 #################################################
 
 #SBATCH --nodes=1                   # How many nodes required? Usually 1
-#SBATCH --cpus-per-task=10           # Number of CPU to request for the job
-#SBATCH --mem=32GB                   # How much memory does your job require?
+#SBATCH --cpus-per-task=30           # Number of CPU to request for the job
+#SBATCH --mem=64GB                   # How much memory does your job require?
 #SBATCH --gres=gpu:4                # Do you require GPUS? If not delete this line
 #SBATCH --time=05-00:00:00          # How long to run the job for? Jobs exceed this time will be terminated
                                     # Format <DD-HH:MM:SS> eg. 5 days 05-00:00:00
@@ -55,4 +55,4 @@ srun whichgpu
 # pip3 install -r requirements.txt
 
 # Submit your job to the cluster
-srun --gres=gpu:4 bash running_scripts/fine_tuning/train_logs_ad.sh
+srun --gres=gpu:4 bash running_scripts/train_logs_ad.sh

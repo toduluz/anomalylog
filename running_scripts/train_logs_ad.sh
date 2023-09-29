@@ -1,12 +1,12 @@
 export PYTHONPATH=":."
 LAYOUT='p1'
-MODEL_MAX_LENGTH=4096
-MAX_SENTENCES=64
+MODEL_MAX_LENGTH=1024
+MAX_SENTENCES=16
 MAX_SENTENCE_LENGTH=64
 DATASET_NAME_1='hdfs'
 DATASET_NAME_2='bgl'
 DATASET_NAME_3='tbird'
-# python3 models/hat/convert_roberta_to_htf.py --layout ${LAYOUT} --max_sentences ${MAX_SENTENCES} --max_sentence_length ${MAX_SENTENCE_LENGTH} \
+python3 models/hat/convert_roberta_to_htf.py --layout ${LAYOUT} --max_sentences ${MAX_SENTENCES} --max_sentence_length ${MAX_SENTENCE_LENGTH} \
 
 accelerate launch evaluation/run_logs_ad.py \
     --model_name_or_path data/PLMs/hat-${LAYOUT}-roberta-${MAX_SENTENCES}-${MAX_SENTENCE_LENGTH}-${MODEL_MAX_LENGTH} \
@@ -37,8 +37,10 @@ accelerate launch evaluation/run_logs_ad.py \
     --load_best_model_at_end \
     --overwrite_output_dir \
     --fp16 \
-    --max_steps 200000 \
+    --num_workers 5 \
+    --max_steps 200 \
+    --max_eval_samples 32 \
+    --max_predict_samples 32 \
     # --max_train_samples 200000 \
-    # --max_eval_samples 32 \
-    # --max_predict_samples 32 \
+   
     # --num_train_epochs 10 \
