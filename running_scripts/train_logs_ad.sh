@@ -11,9 +11,9 @@ python3 models/hat/convert_roberta_to_htf.py --layout ${LAYOUT} --max_sentences 
 accelerate launch evaluation/run_logs_ad.py \
     --model_name_or_path data/PLMs/hat-${LAYOUT}-roberta-${MAX_SENTENCES}-${MAX_SENTENCE_LENGTH}-${MODEL_MAX_LENGTH} \
     --dataset_name data/${DATASET_NAME_2} \
-    --output_dir data/PLMs/hat/${LAYOUT}-roberta-${MAX_SENTENCES}-${MAX_SENTENCE_LENGTH}-${MODEL_MAX_LENGTH}/${DATASET_NAME_2}/loss3-mlm-shuf-rev-mlm40-win50\
+    --output_dir data/PLMs/hat/${LAYOUT}-roberta-${MAX_SENTENCES}-${MAX_SENTENCE_LENGTH}-${MODEL_MAX_LENGTH}/${DATASET_NAME_2}/loss3-mlm-shuf-rev-mlm15-win50-topk3\
     --do_train \
-    --learning_rate 1e-4 \
+    --learning_rate 5e-5 \
     --lr_scheduler_type linear \
     --warmup_ratio 0.10 \
     --weight_decay 0.01 \
@@ -27,20 +27,18 @@ accelerate launch evaluation/run_logs_ad.py \
     --do_predict \
     --logging_strategy steps \
     --logging_steps .1 \
-    --per_device_train_batch_size 1 \
-    --per_device_eval_batch_size 1 \
-    --gradient_accumulation_steps 1 \
-    --eval_accumulation_steps 1 \
+    --per_device_train_batch_size 4 \
+    --per_device_eval_batch_size 4 \
+    --gradient_accumulation_steps 4 \
+    --eval_accumulation_steps 4 \
     --max_seq_length ${MODEL_MAX_LENGTH} \
     --max_sentences ${MAX_SENTENCES} \
     --metric_for_best_model 'auroc' \
     --load_best_model_at_end \
     --overwrite_output_dir \
-    --fp16 \
-    --num_workers 5 \
-    --max_steps 200 \
-    --max_eval_samples 32 \
-    --max_predict_samples 32 \
+    --num_workers 30 \
+    --max_steps 200000 \
+    # --max_eval_samples 32 \
+    # --max_predict_samples 32 \
     # --max_train_samples 200000 \
-   
     # --num_train_epochs 10 \

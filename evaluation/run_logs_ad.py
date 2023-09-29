@@ -314,6 +314,13 @@ def main():
             revision=model_args.model_revision,
             use_auth_token=True if model_args.use_auth_token else None,
         )
+
+    ct = 0
+    for param in model.parameters():
+        if ct < 0:
+            param.requires_grad = False
+        ct += 1
+    print(ct)
     # else:
     #     config = AutoConfig.from_pretrained(
     #         model_args.model_name_or_path,
@@ -613,7 +620,7 @@ def main():
                 mlm_logits = logits[3]
                 secondary_logits = logits[4]
                 tertiary_logits = logits[5]
-            mlm_indices = torch.topk(mlm_logits, k=3, dim=-1)[1]
+            mlm_indices = torch.topk(mlm_logits, k=2, dim=-1)[1]
             # print(mlm_logits.shape)
             # print(sent_order_logits.shape)
             return (mlm_indices, secondary_logits, tertiary_logits)
@@ -629,7 +636,7 @@ def main():
         # tertiary_labels = p.label_ids[3]
         logs_labels = p.label_ids[0]
 
-        k = 3
+        k = 2
         # Create an empty list to store intermediate results
         mlm_labels = mlm_labels[:, :, np.newaxis].repeat(k, axis=2)
         top_k_list = []
@@ -645,10 +652,10 @@ def main():
             if total <= 0:
                 count += 1
             top_k_list.append(tokens / total if total > 0 else 1.0)
-        print(top_k_list)
-        print('*' * 40)
-        print(count)
-        print('*' * 40)
+        # print(top_k_list)
+        # print('*' * 40)
+        # print(count)
+        # print('*' * 40)
         # secondary_list = [0 if np.argmax(secondary_preds[i]) == np.argmax(secondary_labels[i]) else 1 for i in range(secondary_preds.shape[0])]
         # tertiary_list = [0 if np.argmax(tertiary_preds[i]) == np.argmax(tertiary_labels[i]) else 1 for i in range(tertiary_preds.shape[0])]
 

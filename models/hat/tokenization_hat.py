@@ -195,7 +195,7 @@ class HATTokenizer:
         for text in texts:
             # sentence splitting
             # removal of <*>
-            sentences = text.replace("<*>", "")
+            sentences = text.replace("<*>", "*")
             sentences = sentences.split("|")
             # print(sentences)
             # tokenization of sentences
@@ -204,7 +204,7 @@ class HATTokenizer:
             # with open("data/example.txt", "a") as file:
             #     # Write the information you want to append
             #     file.write(f"{sum([len(sentence) for sentence in sentences['input_ids']])}\n")
-            
+
             # sentence grouping - merging short sentences to minimize padding
             doc_out = self.sentence_grouping(sentences)
             fixed_batch.append(doc_out)
