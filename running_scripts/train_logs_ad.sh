@@ -11,11 +11,12 @@ TOP_K=3
 LR=1e-4
 STEPS=1000
 SAMPLE=1000
-SR=20
+SR=40
 
 # python3 models/hat/convert_roberta_to_htf.py --layout ${LAYOUT} --max_sentences ${MAX_SENTENCES} --max_sentence_length ${MAX_SENTENCE_LENGTH} \
 
-accelerate launch --main_process_port 29500 evaluation/run_logs_ad3.py \
+# accelerate launch --main_process_port 29500 
+python3 evaluation/run_logs_ad3.py \
     --model_name_or_path data/PLMs/hat-${LAYOUT}-roberta-${MAX_SENTENCES}-${MAX_SENTENCE_LENGTH}-${MODEL_MAX_LENGTH} \
     --dataset_name data/${DATASET_NAME_2} \
     --output_dir data/PLMs/hat/${LAYOUT}-roberta-${MAX_SENTENCES}-${MAX_SENTENCE_LENGTH}-${MODEL_MAX_LENGTH}/${DATASET_NAME_2}/mlm${MLM}-top${TOP_K}-so-sr${SR}-${LR}-win50\
@@ -43,12 +44,12 @@ accelerate launch --main_process_port 29500 evaluation/run_logs_ad3.py \
     --metric_for_best_model 'auroc' \
     --load_best_model_at_end \
     --overwrite_output_dir \
-    --num_workers 120 \
+    --num_workers 5 \
     --mlm ${MLM} \
     --topk ${TOP_K} \
     --sr ${SR} \
-    --max_steps 50000 \
-    # --max_train_samples ${SAMPLE} \
-    # --max_eval_samples ${SAMPLE} \
-    # --max_predict_samples ${SAMPLE} \
+    --max_steps 500 \
+    --max_train_samples ${SAMPLE} \
+    --max_eval_samples ${SAMPLE} \
+    --max_predict_samples ${SAMPLE} \
     # --num_train_epochs 10 \

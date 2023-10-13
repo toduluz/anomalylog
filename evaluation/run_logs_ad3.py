@@ -439,23 +439,24 @@ def main():
             secondary_positions = sentence_positions.copy()
             tertiary_positions = sentence_positions.copy()
             
-            to_replace = False
-            if np.random.uniform() < 0.1:
-                to_replace = True
+            # to_replace = False
+            # if np.random.uniform() < 0.1:
+            #     to_replace = True
 
-            if to_replace:
-                replace_no = math.ceil(data_args.sr/100 * n_sentences)
-                if replace_no == 1:
-                    replace_arr = [0]
-                else:
-                    replace_arr = random.sample(range(replace_no), replace_no)
-                
+            # if to_replace:
+            replace_no = math.ceil(data_args.sr/100 * n_sentences)
+            # print(replace_no)
+            if replace_no == 1:
+                replace_arr = [0]
+            else:
+                replace_arr = random.sample(range(n_sentences), replace_no)
+            
+            seq_arr = random.sample(range(len(batch['input_ids'])), replace_no)
+            while example_idx in seq_arr:
                 seq_arr = random.sample(range(len(batch['input_ids'])), replace_no)
-                while example_idx in seq_arr:
-                    seq_arr = random.sample(range(len(batch['input_ids'])), replace_no)
-                sent_arr = [batch['input_ids'][i][::config.max_sentence_length] for i in seq_arr]
-                n_sent_arr = [sum(np.asarray(sent) != config.pad_token_id) for sent in sent_arr]
-                sent_idx_arr = [random.randint(0, n_sent-1) if n_sent > 1 else 0 for n_sent in n_sent_arr]
+            sent_arr = [batch['input_ids'][i][::config.max_sentence_length] for i in seq_arr]
+            n_sent_arr = [sum(np.asarray(sent) != config.pad_token_id) for sent in sent_arr]
+            sent_idx_arr = [random.randint(0, n_sent-1) if n_sent > 1 else 0 for n_sent in n_sent_arr]
 
             # secondary and tertiary
             # if to_shuffle:
@@ -490,18 +491,19 @@ def main():
             temp_attention_mask.extend([config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
 
             # tertiary
+            count = 0
             for idx in tertiary_positions:
-                if to_replace:
-                    if idx in seq_arr:
-                        i = seq_arr.index(idx)
-                        temp_input_ids.extend(batch['input_ids'][seq_arr[i]][config.max_sentence_length * sent_idx_arr[i]:config.max_sentence_length * (sent_idx_arr[i]+1)])
-                        temp_attention_mask.extend(batch['attention_mask'][seq_arr[i]][config.max_sentence_length * sent_idx_arr[i]:config.max_sentence_length * (sent_idx_arr[i]+1)])
-                    else:
-                        temp_input_ids.extend(batch['input_ids'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
-                        temp_attention_mask.extend(batch['attention_mask'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
+                # if to_replace:
+                if idx in replace_arr:
+                    temp_input_ids.extend(batch['input_ids'][seq_arr[count]][config.max_sentence_length * sent_idx_arr[count]:config.max_sentence_length * (sent_idx_arr[count]+1)])
+                    temp_attention_mask.extend(batch['attention_mask'][seq_arr[count]][config.max_sentence_length * sent_idx_arr[count]:config.max_sentence_length * (sent_idx_arr[count]+1)])
+                    count += 1
                 else:
                     temp_input_ids.extend(batch['input_ids'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
                     temp_attention_mask.extend(batch['attention_mask'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
+                # else:
+                #     temp_input_ids.extend(batch['input_ids'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
+                #     temp_attention_mask.extend(batch['attention_mask'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
 
             batch_input_ids.append(temp_input_ids +
                                         [config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
@@ -534,11 +536,12 @@ def main():
             # secondary_labels.append([1., 0.] if not to_shuffle else [0., 1.])
             
             # tertiary_labels.append([1., 0.] if not to_reverse else [0., 1.])
-            # tmp_ter = [1 if to_replace and i in replace_arr else 0 for i in range(n_sentences)]
-            # tmp_ter.extend([-100] * num_pad_sentences)
+            tmp_ter = [1 if i in replace_arr else 0 for i in range(n_sentences)]
+            tmp_ter.extend([-100] * num_pad_sentences)
             # tmp_ter[replace_idx] = 1.
             # tertiary_labels.append([1., 0.] if not to_replace else [0., 1.])
-            tertiary_labels.append(1 if to_replace else 0)
+            # tertiary_labels.append(1 if to_replace else 0)
+            tertiary_labels.append(tmp_ter)
 
         batch['input_ids'] = batch_input_ids
         batch['attention_mask'] = batch_attention_mask
@@ -635,12 +638,12 @@ def main():
             tmp_sec.extend([-100] * num_pad_sentences)
             secondary_labels.append(tmp_sec)
             
-            # tmp_ter = [0 for i in range(n_sentences)]
-            # tmp_ter.extend([-100] * num_pad_sentences)
-            # tertiary_labels.append(tmp_ter)
+            tmp_ter = [0 for i in range(n_sentences)]
+            tmp_ter.extend([-100] * num_pad_sentences)
+            tertiary_labels.append(tmp_ter)
             # tertiary_labels.append([0] * data_args.max_sentences)
             # tertiary_labels.append([1., 0.] if not examples['labels'][example_idx] else [0., 1.])
-            tertiary_labels.append(1 if examples['labels'][example_idx] else 0)
+            # tertiary_labels.append(1 if examples['labels'][example_idx] else 0)
 
         batch['input_ids'] = batch_input_ids
         batch['attention_mask'] = batch_attention_mask
@@ -735,7 +738,7 @@ def main():
 
         mlm_labels = p.label_ids[1][:, :mlm_preds.shape[1]]
         secondary_labels = p.label_ids[2]
-        # tertiary_labels = p.label_ids[3]
+        tertiary_labels = p.label_ids[3]
         logs_labels = p.label_ids[0]
 
         k = data_args.topk
@@ -808,16 +811,16 @@ def main():
             # print(anomaly_score_sum)
             secondary_score.append(anomaly_score_sum)
 
-        # tertiary_score = []
-        # for i in range(tertiary_preds.shape[0]):
-        #     true_predictions = [
-        #         1-p[l] for p, l in zip(tertiary_preds[i], tertiary_labels[i]) if l != -100
-        #     ]
-        #     anomaly_score_sum = sum(true_predictions) / len(true_predictions)
-        #     tertiary_score.append(anomaly_score_sum)
+        tertiary_score = []
+        for i in range(tertiary_preds.shape[0]):
+            true_predictions = [
+                1-p[l] for p, l in zip(tertiary_preds[i], tertiary_labels[i]) if l != -100
+            ]
+            anomaly_score_sum = sum(true_predictions) / len(true_predictions)
+            tertiary_score.append(anomaly_score_sum)
 
 
-        score = [secondary_score[i] + tertiary_preds[i][1] + 1-top_k_list[i] for i in range(logs_labels.shape[0])]
+        score = [secondary_score[i] + tertiary_score[i] + 1-top_k_list[i] for i in range(logs_labels.shape[0])]
         # print(score)
 
         list_of_anomaly_score = list(filter(lambda x: x != -1, [score[i] if logs_labels[i] == 1 else -1 for i in range(logs_labels.shape[0])]))

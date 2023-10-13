@@ -1878,10 +1878,10 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
         )
         self.dropout = nn.Dropout(classifier_dropout)
         self.classifier_secondary = nn.Linear(config.hidden_size, config.max_sentences)
-        self.classifier_tertiary = nn.Linear(config.hidden_size * config.max_sentences, config.num_labels)
+        self.classifier_tertiary = nn.Linear(config.hidden_size, config.num_labels)
 
         self.softmax_sec = nn.Softmax(dim=2)
-        self.softmax_ter = nn.Softmax(dim=1)
+        self.softmax_ter = nn.Softmax(dim=2)
 
         self.num_labels = config.num_labels
         self.max_sentences = config.max_sentences
@@ -1970,7 +1970,7 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
         tertiary_prediction_scores = None
         tertiary_outputs = self.sentencizer(tertiary_sequence_output)
         tertiary_outputs = self.dropout(tertiary_outputs)
-        tertiary_prediction_scores = self.classifier_tertiary(tertiary_outputs.view(-1, self.hidden_size * self.max_sentences))
+        tertiary_prediction_scores = self.classifier_tertiary(tertiary_outputs)#.view(-1, self.hidden_size * self.max_sentences))
 
         total_loss = None
         masked_lm_loss = None
