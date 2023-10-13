@@ -9,7 +9,7 @@
 
 #SBATCH --nodes=1                   # How many nodes required? Usually 1
 #SBATCH --cpus-per-task=30           # Number of CPU to request for the job
-#SBATCH --mem=64GB                   # How much memory does your job require?
+#SBATCH --mem=128GB                   # How much memory does your job require?
 #SBATCH --gres=gpu:4                # Do you require GPUS? If not delete this line
 #SBATCH --time=05-00:00:00          # How long to run the job for? Jobs exceed this time will be terminated
                                     # Format <DD-HH:MM:SS> eg. 5 days 05-00:00:00
@@ -27,7 +27,7 @@
 #SBATCH --account=guansongresearch   # The account you've been assigned (normally student)
 #SBATCH --qos=normal       # What is the QOS assigned to you? Check with myinfo command
 #SBATCH --mail-user=yingfu.lim.2022@msc.smu.edu.sg # Who should receive the email notifications
-#SBATCH --job-name=test_bgl_v0     # Give the job a name
+#SBATCH --job-name=test_bgl     # Give the job a name
 #SBATCH --requeue
 
 #################################################

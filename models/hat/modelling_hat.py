@@ -1877,11 +1877,13 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
             config.classifier_dropout if config.classifier_dropout is not None else config.hidden_dropout_prob
         )
         self.dropout = nn.Dropout(classifier_dropout)
-        self.classifier_secondary = nn.Linear(config.max_sentences * config.hidden_size, config.num_labels)
-        self.classifier_tertiary = nn.Linear(config.max_sentences * config.hidden_size, config.num_labels)
+        self.classifier_secondary = nn.Linear(config.hidden_size, config.max_sentences)
+        self.classifier_tertiary = nn.Linear(config.hidden_size * config.max_sentences, config.num_labels)
 
-        self.softmax = nn.Softmax(dim=1)
-        
+        self.softmax_sec = nn.Softmax(dim=2)
+        self.softmax_ter = nn.Softmax(dim=1)
+
+        self.num_labels = config.num_labels
         self.max_sentences = config.max_sentences
         self.max_sentence_length = config.max_sentence_length
         self.hidden_size = config.hidden_size
@@ -1963,12 +1965,12 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
         secondary_prediction_scores = None
         secondary_outputs = self.sentencizer(secondary_sequence_output)
         secondary_outputs = self.dropout(secondary_outputs)
-        secondary_prediction_scores = self.classifier_secondary(secondary_outputs.view(-1, self.max_sentences * self.hidden_size))
+        secondary_prediction_scores = self.classifier_secondary(secondary_outputs)
         
         tertiary_prediction_scores = None
         tertiary_outputs = self.sentencizer(tertiary_sequence_output)
         tertiary_outputs = self.dropout(tertiary_outputs)
-        tertiary_prediction_scores = self.classifier_tertiary(tertiary_outputs.view(-1, self.max_sentences * self.hidden_size))
+        tertiary_prediction_scores = self.classifier_tertiary(tertiary_outputs.view(-1, self.hidden_size * self.max_sentences))
 
         total_loss = None
         masked_lm_loss = None
@@ -1979,11 +1981,11 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
             masked_lm_loss = loss_fct(torch.reshape(primary_prediction_scores, (-1, self.config.vocab_size)), torch.reshape(primary_labels, (-1,)))
         if secondary_labels is not None:
             loss_fct = CrossEntropyLoss()
-            secondary_loss = loss_fct(secondary_prediction_scores, secondary_labels)
+            secondary_loss = loss_fct(secondary_prediction_scores.view(-1, self.max_sentences), secondary_labels.view(-1))
         if tertiary_labels is not None:
             loss_fct = CrossEntropyLoss()
-            tertiary_loss = loss_fct(tertiary_prediction_scores, tertiary_labels)
-        #     if self.config.problem_type 
+            tertiary_loss = loss_fct(tertiary_prediction_scores.view(-1, self.num_labels), tertiary_labels.view(-1))
+            # if self.config.problem_type 
         # is None:
         #         if self.num_labels == 1:
         #             self.config.problem_type = "regression"
@@ -2015,8 +2017,8 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
         total_loss = masked_lm_loss + secondary_loss + tertiary_loss
 
         if not return_dict:
-            output = (primary_prediction_scores, secondary_prediction_scores, tertiary_prediction_scores) + primary_outputs[2:] 
-            return ((total_loss, masked_lm_loss, secondary_loss, tertiary_loss) + output) if total_loss is not None else output
+            output = (primary_prediction_scores, secondary_prediction_scores + tertiary_prediction_scores) + primary_outputs[2:] 
+            return ((total_loss, masked_lm_loss, secondary_loss + tertiary_loss) + output) if total_loss is not None else output
 
         return HATForLogsPreTrainingOutput(
             loss=total_loss,
@@ -2024,8 +2026,8 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
             secondary_loss=secondary_loss,
             tertiary_loss=tertiary_loss,
             primary_prediction_logits=primary_prediction_scores,
-            secondary_prediction_logits=self.softmax(secondary_prediction_scores),
-            tertiary_prediction_logits=self.softmax(tertiary_prediction_scores),
+            secondary_prediction_logits=self.softmax_sec(secondary_prediction_scores),
+            tertiary_prediction_logits=self.softmax_ter(tertiary_prediction_scores),
             hidden_states=primary_outputs.hidden_states,
             attentions=primary_outputs.attentions,
         )

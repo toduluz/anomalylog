@@ -601,7 +601,7 @@ class DataCollatorForLogsPreTraining(DataCollatorMixin):
 
     tokenizer: PreTrainedTokenizerBase
     mlm: bool = True
-    mlm_probability: float = 0.4
+    mlm_probability: float = 0.15
     pad_to_multiple_of: Optional[int] = None
     return_tensors: str = "pt"
 
