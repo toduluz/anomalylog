@@ -349,8 +349,10 @@ class HATForLogsPreTrainingOutput(ModelOutput):
 
     loss: Optional[torch.FloatTensor] = None
     mlm_loss: Optional[torch.FloatTensor] = None
+    secondary_loss: Optional[torch.FloatTensor] = None
     tertiary_loss: Optional[torch.FloatTensor] = None
     primary_prediction_logits: torch.FloatTensor = None
+    secondary_prediction_logits: torch.FloatTensor = None
     tertiary_prediction_logits: torch.FloatTensor = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
@@ -1875,11 +1877,11 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
             config.classifier_dropout if config.classifier_dropout is not None else config.hidden_dropout_prob
         )
         self.dropout = nn.Dropout(classifier_dropout)
-        # self.classifier_secondary = nn.Linear(config.hidden_size, config.max_sentences)
-        self.classifier_tertiary = nn.Linear(config.hidden_size*config.max_sentences, config.num_labels)
+        self.classifier_secondary = nn.Linear(config.hidden_size, config.max_sentences)
+        self.classifier_tertiary = nn.Linear(config.hidden_size, config.num_labels)
 
-        # self.softmax_sec = nn.Softmax(dim=2)
-        self.softmax_ter = nn.Softmax(dim=1)
+        self.softmax_sec = nn.Softmax(dim=2)
+        self.softmax_ter = nn.Softmax(dim=2)
 
         self.num_labels = config.num_labels
         self.max_sentences = config.max_sentences
@@ -1897,7 +1899,7 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
         position_ids=None,
         labels=None,
         primary_labels=None,
-        # secondary_labels=None,
+        secondary_labels=None,
         tertiary_labels=None,
         output_attentions=None,
         output_hidden_states=None,
@@ -1910,13 +1912,13 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
         attention_mask_pri = attention_mask[:, :self.max_sentences*self.max_sentence_length]
         token_type_ids_pri = token_type_ids[:, :self.max_sentences*self.max_sentence_length]
 
-        # input_ids_sec = input_ids[:, self.max_sentences*self.max_sentence_length:]
-        # attention_mask_sec = attention_mask[:, self.max_sentences*self.max_sentence_length:]
-        # token_type_ids_sec = token_type_ids[:, self.max_sentences*self.max_sentence_length:]
+        input_ids_sec = input_ids[:, self.max_sentences*self.max_sentence_length:self.max_sentences*self.max_sentence_length*2]
+        attention_mask_sec = attention_mask[:, self.max_sentences*self.max_sentence_length:self.max_sentences*self.max_sentence_length*2]
+        token_type_ids_sec = token_type_ids[:, self.max_sentences*self.max_sentence_length:self.max_sentences*self.max_sentence_length*2]
 
-        input_ids_ter = input_ids[:, self.max_sentences*self.max_sentence_length:]
-        attention_mask_ter = attention_mask[:, self.max_sentences*self.max_sentence_length:]
-        token_type_ids_ter = token_type_ids[:, self.max_sentences*self.max_sentence_length:]
+        input_ids_ter = input_ids[:, self.max_sentences*self.max_sentence_length*2:]
+        attention_mask_ter = attention_mask[:, self.max_sentences*self.max_sentence_length*2:]
+        token_type_ids_ter = token_type_ids[:, self.max_sentences*self.max_sentence_length*2:]
 
         primary_labels = primary_labels[:, :self.max_sentences*self.max_sentence_length]
         
@@ -1930,15 +1932,15 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
             return_dict=return_dict,
         )
 
-        # secondary_outputs = self.hi_transformer(
-        #     input_ids_sec,
-        #     attention_mask=attention_mask_sec,
-        #     token_type_ids=token_type_ids_sec,
-        #     position_ids=position_ids,
-        #     output_attentions=output_attentions,
-        #     output_hidden_states=output_hidden_states,
-        #     return_dict=return_dict,
-        # )
+        secondary_outputs = self.hi_transformer(
+            input_ids_sec,
+            attention_mask=attention_mask_sec,
+            token_type_ids=token_type_ids_sec,
+            position_ids=position_ids,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+            return_dict=return_dict,
+        )
 
         tertiary_outputs = self.hi_transformer(
             input_ids_ter,
@@ -1952,7 +1954,7 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
 
         # Collect sequence output representations
         primary_sequence_output = primary_outputs[0]
-        # secondary_sequence_output = secondary_outputs[0]
+        secondary_sequence_output = secondary_outputs[0]
         tertiary_sequence_output = tertiary_outputs[0]
 
         # Masked Language Modeling (MLM)
@@ -1960,26 +1962,26 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
         primary_prediction_scores = self.lm_head(primary_sequence_output)
 
         # Document Segment Order Prediction
-        # secondary_prediction_scores = None
-        # secondary_outputs = self.sentencizer(secondary_sequence_output)
-        # secondary_outputs = self.dropout(secondary_outputs)
-        # secondary_prediction_scores = self.classifier_secondary(secondary_outputs)
+        secondary_prediction_scores = None
+        secondary_outputs = self.sentencizer(secondary_sequence_output)
+        secondary_outputs = self.dropout(secondary_outputs)
+        secondary_prediction_scores = self.classifier_secondary(secondary_outputs)
         
         tertiary_prediction_scores = None
         tertiary_outputs = self.sentencizer(tertiary_sequence_output)
         tertiary_outputs = self.dropout(tertiary_outputs)
-        tertiary_prediction_scores = self.classifier_tertiary(tertiary_outputs.view(-1, self.hidden_size * self.max_sentences))
+        tertiary_prediction_scores = self.classifier_tertiary(tertiary_outputs)#.view(-1, self.hidden_size * self.max_sentences))
 
         total_loss = None
         masked_lm_loss = None
-        # secondary_loss = None
+        secondary_loss = None
         tertiary_loss = None
         if primary_labels is not None:
             loss_fct = CrossEntropyLoss()
             masked_lm_loss = loss_fct(torch.reshape(primary_prediction_scores, (-1, self.config.vocab_size)), torch.reshape(primary_labels, (-1,)))
-        # if secondary_labels is not None:
-        #     loss_fct = CrossEntropyLoss()
-        #     secondary_loss = loss_fct(secondary_prediction_scores.view(-1, self.max_sentences), secondary_labels.view(-1))
+        if secondary_labels is not None:
+            loss_fct = CrossEntropyLoss()
+            secondary_loss = loss_fct(secondary_prediction_scores.view(-1, self.max_sentences), secondary_labels.view(-1))
         if tertiary_labels is not None:
             loss_fct = CrossEntropyLoss()
             tertiary_loss = loss_fct(tertiary_prediction_scores.view(-1, self.num_labels), tertiary_labels.view(-1))
@@ -2012,17 +2014,19 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
         # elif sent_order_loss:
         #     total_loss = sent_order_loss
 
-        total_loss = masked_lm_loss + tertiary_loss
+        total_loss = masked_lm_loss + secondary_loss + tertiary_loss
 
         if not return_dict:
-            output = (primary_prediction_scores, tertiary_prediction_scores) + primary_outputs[2:] 
-            return ((total_loss, masked_lm_loss, tertiary_loss) + output) if total_loss is not None else output
+            output = (primary_prediction_scores, secondary_prediction_scores + tertiary_prediction_scores) + primary_outputs[2:] 
+            return ((total_loss, masked_lm_loss, secondary_loss + tertiary_loss) + output) if total_loss is not None else output
 
         return HATForLogsPreTrainingOutput(
             loss=total_loss,
             mlm_loss=masked_lm_loss,
+            secondary_loss=secondary_loss,
             tertiary_loss=tertiary_loss,
             primary_prediction_logits=primary_prediction_scores,
+            secondary_prediction_logits=self.softmax_sec(secondary_prediction_scores),
             tertiary_prediction_logits=self.softmax_ter(tertiary_prediction_scores),
             hidden_states=primary_outputs.hidden_states,
             attentions=primary_outputs.attentions,

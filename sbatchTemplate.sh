@@ -45,7 +45,7 @@ module load Python/3.11.4
 
 # This command assumes that you've already created the environment previously
 # We're using an absolute path here. You may use a relative path, as long as SRUN is execute in the same working directory
-source ~/anomalylog/myenv/bin/activate
+source ~/anomalylog/myenvv1/bin/activate
 
 # Find out which GPU you are using
 srun whichgpu

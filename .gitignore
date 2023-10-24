@@ -143,3 +143,6 @@ logs/
 
 #PLM Folder
 PLMs/
+
+#zip files
+*.zip

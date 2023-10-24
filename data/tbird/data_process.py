@@ -214,10 +214,10 @@ if __name__ == "__main__":
 
     parser_type = 'drain'
     #mins
-    window_size = 50
-    step_size = 50
+    window_size = 100
+    step_size = 100
     train_ratio = 0.8
-    # val_ratio = 0.1
+    val_ratio = 0.1
 
     #########
     # sample raw data
@@ -256,7 +256,14 @@ if __name__ == "__main__":
     # output_dir += window_name
 
     # sampling with fixed window
-    deeplog_df = fixed_window(df[["timestamp", "Label", "EventId", "deltaT", "EventTemplate", "Content"]],
+    train_len = int(len(df) * train_ratio)
+    df_train = df[:train_len]
+    df_test = df[train_len:]
+    train = fixed_window(df_train[["timestamp", "Label", "EventId", "deltaT", "EventTemplate", "Content"]],
+                                para={"window_size": int(window_size), "step_size": int(step_size)}
+                                )
+    
+    test = fixed_window(df_test[["timestamp", "Label", "EventId", "deltaT", "EventTemplate", "Content"]],
                                 para={"window_size": int(window_size), "step_size": int(step_size)}
                                 )
 
@@ -266,21 +273,20 @@ if __name__ == "__main__":
     #########
     # Train #
     #########
-    deeplog_df.rename(columns={"EventTemplate": "text", "Label": "labels"}, inplace=True)
-    df_len = len(deeplog_df)
-    train_len = int(df_len * train_ratio)
-
-    train = deeplog_df[:train_len]
+    train.rename(columns={"EventTemplate": "text", "Label": "labels"}, inplace=True)
+    # df_len = len(train)
+    # train = deeplog_df[:train_len]
     # train = train[train["labels"] == 0]
     train['text'] = train['text'].apply(lambda x: '|'.join(x))
     train = train.loc[:, ['text', 'labels']]
     train_normal = train[train["labels"] == 0]
+    train_normal.sample(frac=1, random_state=42)
     train_abnormal = train[train["labels"] == 1]
-    train_sample_len = len(train_normal) - 4500
-    train = train_normal[:train_sample_len]
+    train_sample_len = int(len(train_normal) * (1-val_ratio))
+    train_set = train_normal[:train_sample_len]
 
-    print("training size {}".format(len(train)))
-    train.to_csv(output_dir + "train.csv", index=False)
+    print("training size {}".format(len(train_set)))
+    train_set.to_csv(output_dir + "train.csv", index=False)
 
     # ###############
     # #     Val     #
@@ -289,7 +295,7 @@ if __name__ == "__main__":
     # validation = deeplog_df[train_len:train_len+val_len]
     # validation['text'] = validation['text'].apply(lambda x: '|'.join(x))
     # validation = validation.loc[:, ['text', 'labels']]
-    validation = pd.concat([train_normal[train_sample_len:], train_abnormal[:500]], axis=0)
+    validation = pd.concat([train_normal[train_sample_len:], train_abnormal], axis=0)
     validation = validation.sample(frac=1, random_state=42)
 
     print("validation size {}".format(len(validation)))
@@ -299,7 +305,8 @@ if __name__ == "__main__":
     # ###############
     # #     Test    #
     # ###############
-    test = deeplog_df[train_len:]
+    # test = test[train_len:]
+    test.rename(columns={"EventTemplate": "text", "Label": "labels"}, inplace=True)
     test['text'] = test['text'].apply(lambda x: '|'.join(x))
     test = test.loc[:, ['text', 'labels']]
 

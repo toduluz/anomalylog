@@ -195,8 +195,8 @@ class HATTokenizer:
         for text in texts:
             # sentence splitting
             # removal of <*>
-            sentences = text.replace("<*>", "*")
-            sentences = sentences.split("|")
+            # sentences = text.replace("<*>", "*")
+            sentences = text.split("|")
             # print(sentences)
             # tokenization of sentences
             sentences = self._tokenizer(sentences, add_special_tokens=False, padding=False, truncation=False)

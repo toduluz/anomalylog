@@ -43,13 +43,13 @@ def parser(input_dir, output_dir, log_file, log_format, type='drain'):
     elif type == 'drain':
         regex = [
             r"(?<=blk_)[-\d]+", # block_id
-            r'\d+\.\d+\.\d+\.\d+',  # IP
+            r'\d+\.\d+\.\d+\.\d+\:\d+',  # IP:Port
             r"(/[-\w]+)+",  # file path
             #r'(?<=[^A-Za-z0-9])(\-?\+?\d+)(?=[^A-Za-z0-9])|[0-9]+$',  # Numbers
         ]
         # the hyper parameter is set according to http://jmzhu.logpai.com/pub/pjhe_icws2017.pdf
         st = 0.5  # Similarity threshold
-        depth = 5  # Depth of all leaf nodes
+        depth = 3  # Depth of all leaf nodes
 
 
         parser = Drain.LogParser(log_format, indir=input_dir, outdir=output_dir, depth=depth, st=st, rex=regex, keep_para=False)
@@ -141,19 +141,20 @@ def generate_train_test(hdfs_sequence_file):
     # print(type(seq["text"][0]))
 
     train_ratio = 0.8
-    # val_ratio = 0.1
+    val_ratio = 0.1
 
     seq_len = len(seq)
     train_len = int(seq_len * train_ratio)
     # val_len = int(seq_len * val_ratio)
     train = seq[:train_len]
     train_normal = train[train["labels"] == 0]
+    train_normal = train_normal.sample(frac=1, random_state=42)
     train_abnormal = train[train["labels"] == 1]
-    train_sample_len = len(train_normal) - 4500
+    train_sample_len = int(len(train_normal) * (1-val_ratio))
     train = train_normal[:train_sample_len]
     # train = train[train["labels"] == 0]
     
-    validation = pd.concat([train_normal[train_sample_len:], train_abnormal[:500]], axis=0)
+    validation = pd.concat([train_normal[train_sample_len:], train_abnormal], axis=0)
     validation = validation.sample(frac=1, random_state=42)
     # validation = seq[train_len:train_len+val_len]
 
@@ -188,8 +189,8 @@ def df_to_file(df, file_name):
 
 if __name__ == "__main__":
     # 1. parse HDFS log
-    # log_format = '<Date> <Time> <Pid> <Level> <Component>: <Content>'  # HDFS log format
-    # parser(input_dir, output_dir, log_file, log_format, 'drain')
-    # mapping()
-    # hdfs_sampling(log_structured_file)
+    log_format = '<Date> <Time> <Pid> <Level> <Component>: <Content>'  # HDFS log format
+    parser(input_dir, output_dir, log_file, log_format, 'drain')
+    mapping()
+    hdfs_sampling(log_structured_file)
     generate_train_test(log_sequence_file)
