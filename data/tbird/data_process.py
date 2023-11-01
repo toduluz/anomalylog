@@ -206,23 +206,23 @@ if __name__ == "__main__":
     data_dir = os.path.expanduser("./")
     output_dir = "./"
     raw_log_file = "Thunderbird.log"
-    sample_log_file = "Thunderbird_10M.log"
-    sample_window_size = 1*10**7
+    sample_log_file = "Thunderbird_20M.log"
+    sample_window_size = 2*10**7
     sample_step_size = 10**4
     window_name = ''
     log_file = raw_log_file
 
     parser_type = 'drain'
     #mins
-    window_size = 100
-    step_size = 100
+    window_size = 60
+    step_size = 60
     train_ratio = 0.8
     val_ratio = 0.1
 
     #########
     # sample raw data
     #########
-    # sample_raw_data(data_dir+raw_log_file, data_dir+sample_log_file, sample_window_size, sample_step_size)
+    sample_raw_data(data_dir+raw_log_file, data_dir+sample_log_file, sample_window_size, sample_step_size)
 
     ########
     # count anomaly
@@ -234,7 +234,7 @@ if __name__ == "__main__":
     ##########
     # Parser #
     #########
-    # parse_log(data_dir, output_dir, sample_log_file, parser_type)
+    parse_log(data_dir, output_dir, sample_log_file, parser_type)
 
     ##################
     # Transformation #
@@ -250,20 +250,13 @@ if __name__ == "__main__":
     df['deltaT'].fillna(0)
 
     # sampling with sliding window
-    # deeplog_df = sliding_window(df[["timestamp", "Label", "EventId", "deltaT"]],
-    #                             para={"window_size": float(window_size), "step_size": float(step_size)}
-    #                             )
+    deeplog_df = sliding_window(df[["timestamp", "Label", "EventId", "deltaT"]],
+                                para={"window_size": float(window_size), "step_size": float(step_size)}
+                                )
     # output_dir += window_name
 
     # sampling with fixed window
-    train_len = int(len(df) * train_ratio)
-    df_train = df[:train_len]
-    df_test = df[train_len:]
-    train = fixed_window(df_train[["timestamp", "Label", "EventId", "deltaT", "EventTemplate", "Content"]],
-                                para={"window_size": int(window_size), "step_size": int(step_size)}
-                                )
-    
-    test = fixed_window(df_test[["timestamp", "Label", "EventId", "deltaT", "EventTemplate", "Content"]],
+    deeplog_df = fixed_window(df[["timestamp", "Label", "EventId", "deltaT", "EventTemplate", "Content"]],
                                 para={"window_size": int(window_size), "step_size": int(step_size)}
                                 )
 
