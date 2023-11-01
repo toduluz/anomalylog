@@ -6,19 +6,19 @@ MAX_SENTENCE_LENGTH=64
 DATASET_NAME_1='hdfs'
 DATASET_NAME_2='bgl'
 DATASET_NAME_3='tbird'
-MLM=40
+MLM=15
 TOP_K=3
-LR=1e-4
+LR=5e-5
 STEPS=2000
 SAMPLE=1000
 # SR=60
 
-python3 models/hat/convert_roberta_to_htf.py --layout ${LAYOUT} --max_sentences ${MAX_SENTENCES} --max_sentence_length ${MAX_SENTENCE_LENGTH} \
+# python3 models/hat/convert_roberta_to_htf.py --layout ${LAYOUT} --max_sentences ${MAX_SENTENCES} --max_sentence_length ${MAX_SENTENCE_LENGTH} \
 
 accelerate launch --main_process_port 29502 evaluation/run_logs_ad2.py \
     --model_name_or_path data/PLMs/hat-${LAYOUT}-roberta-${MAX_SENTENCES}-${MAX_SENTENCE_LENGTH}-${MODEL_MAX_LENGTH} \
     --dataset_name data/${DATASET_NAME_2} \
-    --output_dir data/PLMs/hat/${LAYOUT}-roberta-${MAX_SENTENCES}-${MAX_SENTENCE_LENGTH}-${MODEL_MAX_LENGTH}/${DATASET_NAME_2}/mlm${MLM}-top${TOP_K}-varshuf-${LR}-win50-ct66-acmgrad4 \
+    --output_dir data/PLMs/hat/${LAYOUT}-roberta-${MAX_SENTENCES}-${MAX_SENTENCE_LENGTH}-${MODEL_MAX_LENGTH}/${DATASET_NAME_2}/mlm${MLM}-top${TOP_K}-${LR}-win50-ct0-acmgrad4 \
     --do_train \
     --learning_rate ${LR} \
     --lr_scheduler_type linear \
@@ -47,9 +47,9 @@ accelerate launch --main_process_port 29502 evaluation/run_logs_ad2.py \
     --mlm ${MLM} \
     --topk ${TOP_K} \
     --max_steps 50000 \
-    --max_eval_samples ${SAMPLE} \
-    --max_predict_samples ${SAMPLE} \
-    --max_train_samples ${SAMPLE} \
+    # --max_eval_samples ${SAMPLE} \
+    # --max_predict_samples ${SAMPLE} \
+    # --max_train_samples ${SAMPLE} \
     # --num_train_epochs 10 \
     # --sr ${SR} \
 

@@ -330,5 +330,5 @@ if __name__ == '__main__':
     # ]
     # parse_log("./", "./", "BGL.log", "drain", log_format, regex)
     process_dataset(data_dir="./", output_dir="./", log_file="BGL.log", dataset_name="bgl",
-                    window_type="sliding", window_size=20, step_size=20, train_size=0.8, random_sample=False,
+                    window_type="sliding", window_size=50, step_size=50, train_size=0.8, random_sample=False,
                     session_type="entry")

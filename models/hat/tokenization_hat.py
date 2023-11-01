@@ -200,6 +200,7 @@ class HATTokenizer:
             # print(sentences)
             # tokenization of sentences
             sentences = self._tokenizer(sentences, add_special_tokens=False, padding=False, truncation=False)
+            # print(sentences['input_ids'])
 
             # with open("data/example.txt", "a") as file:
             #     # Write the information you want to append

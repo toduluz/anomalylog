@@ -298,7 +298,7 @@ def main():
     if 'hat' in model_args.model_name_or_path:
         config = HATConfig.from_pretrained(
             model_args.model_name_or_path,
-            num_labels=2,
+            num_labels=data_args.max_sentences,
             cache_dir=model_args.cache_dir,
             revision=model_args.model_revision,
             use_auth_token=True if model_args.use_auth_token else None,
@@ -322,7 +322,7 @@ def main():
 
     ct = 0
     for param in model.parameters():
-        if ct < 66:
+        if ct < 0:
             param.requires_grad = False
         ct += 1
     print(ct)
@@ -412,8 +412,8 @@ def main():
             max_length=data_args.max_seq_length,
             truncation=True,
         )
-
-        masked_inputs, primary_labels = numpy_mask_tokens(inputs=batch['input_ids'])
+        # print(batch["input_ids"][0])
+        # masked_inputs, primary_labels = numpy_mask_tokens(inputs=batch['input_ids'])
 
         batch_input_ids = []
         batch_attention_mask = []
@@ -443,18 +443,18 @@ def main():
             
             # random.shuffle(secondary_positions)
             
-            tertiary_positions = sentence_positions.copy()
+            # tertiary_positions = sentence_positions.copy()
             
             # to_replace = False
             # to_shuffle_sent = False
-            to_shuffle_tok = False
+            # to_shuffle_tok = False
             # to_delete = False
             # to_reverse = False
-            num = np.random.uniform()
-            # if num < .2:
-            #     to_shuffle_sent = True
-            if num < .4:
-                to_shuffle_tok = True
+            # num = np.random.uniform()
+            # if num < 0.2 and n_sentences > 1:
+                # to_shuffle_sent = True
+            # if num < .4:
+            #     to_shuffle_tok = True
             # elif num < .6:
             #     to_shuffle_sent = True
             #     to_shuffle_tok = True
@@ -486,7 +486,9 @@ def main():
             # if to_reverse:
             #     tertiary_positions = np.flip(tertiary_positions)
             # if to_shuffle_sent:
-            #     random.shuffle(tertiary_positions)
+                # random.shuffle(sentence_positions)
+            #     while max([1 if p==t else 0 for p, t in zip(sentence_positions, tertiary_positions)]):
+            #         random.shuffle(tertiary_positions)
             # if to_shuffle_tok:
             #     replace_no = math.ceil(data_args.sr/100 * n_sentences)
             #     replace_arr = random.sample(range(n_sentences), replace_no)
@@ -504,15 +506,15 @@ def main():
 
             # original
             for idx in sentence_positions:
-                temp_input_ids.extend(masked_inputs[example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
+                temp_input_ids.extend(batch['input_ids'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
                 temp_attention_mask.extend(batch['attention_mask'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
                 # temp_input_ids.extend(batch['input_ids'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
                 # temp_attention_mask.extend(batch['attention_mask'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
 
             num_pad_sentences = config.max_sentences - n_sentences
 
-            temp_input_ids.extend([config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
-            temp_attention_mask.extend([config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
+            # temp_input_ids.extend([config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
+            # temp_attention_mask.extend([config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
 
             # secondary
             # for idx in secondary_positions:
@@ -524,7 +526,7 @@ def main():
 
             # tertiary
             # count = 0
-            for idx in tertiary_positions:
+            # for idx in tertiary_positions:
                 # if to_replace:
                 #     if idx in replace_arr:
                 #         temp_input_ids.extend(batch['input_ids'][seq_arr[count]][config.max_sentence_length * sent_idx_arr[count]:config.max_sentence_length * (sent_idx_arr[count]+1)])
@@ -540,15 +542,15 @@ def main():
                 #         temp_input_ids.extend(batch['input_ids'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
                 #         temp_attention_mask.extend(batch['attention_mask'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
                 # else:
-                if to_shuffle_tok:
-                    n=4
-                    tokens = list(range(config.max_sentence_length * idx, config.max_sentence_length * (idx+1), n))
-                    random.shuffle(tokens)
-                    temp_input_ids.extend([batch['input_ids'][example_idx][i] for start in tokens for i in range(start, start+n)])
-                    temp_attention_mask.extend([batch['attention_mask'][example_idx][i] for start in tokens for i in range(start, start+n)])
-                else:
-                    temp_input_ids.extend(batch['input_ids'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
-                    temp_attention_mask.extend(batch['attention_mask'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
+                # if to_shuffle_tok:
+                #     n=8
+                #     tokens = list(range(config.max_sentence_length * idx, config.max_sentence_length * (idx+1), n))
+                #     random.shuffle(tokens)
+                #     temp_input_ids.extend([batch['input_ids'][example_idx][i] for start in tokens for i in range(start, start+n)])
+                #     temp_attention_mask.extend([batch['attention_mask'][example_idx][i] for start in tokens for i in range(start, start+n)])
+                # else:
+                # temp_input_ids.extend(batch['input_ids'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
+                # temp_attention_mask.extend(batch['attention_mask'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
 
             # batch_input_ids.append(temp_input_ids +
             #                             [config.pad_token_id] * (config.max_sentence_length * (num_pad_sentences + delete_no if to_delete else num_pad_sentences)))
@@ -563,7 +565,7 @@ def main():
             # print(len(batch_input_ids[-1]))
             
             # token_type_ids for all
-            batch_token_type_ids.append([0] * data_args.max_seq_length*2)
+            batch_token_type_ids.append([0] * data_args.max_seq_length)
 
             # # Fix sentence delimiters for Longformer
             # if config.model_type == 'longformer':
@@ -594,29 +596,30 @@ def main():
             # tmp_ter[replace_idx] = 1.
             # tertiary_labels.append([1., 0.] if not to_replace else [0., 1.])
             # tertiary_labels.append(1 if to_replace else 0)
-            ter_lab = 0
+            # ter_lab = 0
             # if to_replace:
             #     ter_lab = 1
             # if to_shuffle_sent and to_shuffle_tok:
             #     ter_lab = 1
-            # elif to_shuffle_sent:
-            #     ter_lab = 2
-            if to_shuffle_tok:
-                ter_lab = 1
+            # if to_shuffle_sent:
+            #     ter_lab = 1
+            # if to_shuffle_tok:
+            #     ter_lab = 1
             # elif to_reverse:
             #     ter_lab = 2
             # tertiary_labels.append(ter_lab)
-            # tmp_ter = tertiary_positions.copy()
+            # tmp_ter = sentence_positions.copy()
             # tmp_ter.extend([-100] * num_pad_sentences)
             # tertiary_labels.append(tmp_ter)
             # tmp_ter = [0 if o==s else 1 for o,s in zip(range(n_sentences), tertiary_positions)]
+            # tmp_ter = [0] * n_sentences
             # tmp_ter.extend([-100] * num_pad_sentences)
-            tertiary_labels.append(ter_lab)
+            tertiary_labels.append(0)
 
         batch['input_ids'] = batch_input_ids
         batch['attention_mask'] = batch_attention_mask
         batch['token_type_ids'] = batch_token_type_ids
-        batch['primary_labels'] = primary_labels
+        # batch['primary_labels'] = primary_labels
         # batch['secondary_labels'] = secondary_labels
         batch['tertiary_labels'] = tertiary_labels
 
@@ -631,7 +634,7 @@ def main():
             truncation=True,
         )
 
-        masked_inputs, primary_labels = numpy_mask_tokens(batch['input_ids'])
+        # masked_inputs, primary_labels = numpy_mask_tokens(batch['input_ids'])
 
         batch_input_ids = []
         batch_attention_mask = []
@@ -647,7 +650,7 @@ def main():
             # sentence order
             sentence_positions = list(range(n_sentences))
             # secondary_positions = sentence_positions.copy()
-            tertiary_positions = sentence_positions.copy()
+            # tertiary_positions = sentence_positions.copy()
             
             # adapt sequence inputs
             temp_input_ids = []
@@ -655,15 +658,15 @@ def main():
 
             # original
             for idx in sentence_positions:
-                temp_input_ids.extend(masked_inputs[example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
+                temp_input_ids.extend(batch['input_ids'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
                 temp_attention_mask.extend(batch['attention_mask'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
                 # temp_input_ids.extend(batch['input_ids'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
                 # temp_attention_mask.extend(batch['attention_mask'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
 
             num_pad_sentences = config.max_sentences - n_sentences
 
-            temp_input_ids.extend([config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
-            temp_attention_mask.extend([config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
+            # temp_input_ids.extend([config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
+            # temp_attention_mask.extend([config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
 
             # secondary
             # for idx in secondary_positions:
@@ -674,9 +677,9 @@ def main():
             # temp_attention_mask.extend([config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
 
             # # tertiary
-            for idx in tertiary_positions:
-                temp_input_ids.extend(batch['input_ids'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
-                temp_attention_mask.extend(batch['attention_mask'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
+            # for idx in tertiary_positions:
+            #     temp_input_ids.extend(batch['input_ids'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
+            #     temp_attention_mask.extend(batch['attention_mask'][example_idx][config.max_sentence_length * idx:config.max_sentence_length * (idx+1)])
 
             batch_input_ids.append(temp_input_ids +
                                         [config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
@@ -684,7 +687,7 @@ def main():
                                         [config.pad_token_id] * (config.max_sentence_length * num_pad_sentences))
             
             # token_type_ids for all
-            batch_token_type_ids.append([0] * data_args.max_seq_length*2)
+            batch_token_type_ids.append([0] * data_args.max_seq_length)
 
             # # Fix sentence delimiters for Longformer
             # if config.model_type == 'longformer':
@@ -713,17 +716,17 @@ def main():
             # tertiary_labels.append(tmp_ter)
             # tertiary_labels.append([0] * data_args.max_sentences)
             # tertiary_labels.append([1., 0.] if not examples['labels'][example_idx] else [0., 1.])
-            # tertiary_labels.append(1 if examples['labels'][example_idx] else 0)
+            tertiary_labels.append(1 if examples['labels'][example_idx] else 0)
             # tertiary_labels.append(0)
-            # tmp_ter = tertiary_positions.copy()
+            # tmp_ter = sentence_positions.copy()
             # tmp_ter = [0] * n_sentences
             # tmp_ter.extend([-100] * num_pad_sentences)
-            tertiary_labels.append(0)
+            # tertiary_labels.append(tmp_ter)
 
         batch['input_ids'] = batch_input_ids
         batch['attention_mask'] = batch_attention_mask
         batch['token_type_ids'] = batch_token_type_ids
-        batch['primary_labels'] = primary_labels
+        # batch['primary_labels'] = primary_labels
         # batch['secondary_labels'] = secondary_labels
         batch['tertiary_labels'] = tertiary_labels
 
@@ -811,8 +814,9 @@ def main():
         # secondary_preds = p.predictions[1]
         # print(secondary_preds.shape)
         tertiary_preds = p.predictions[1]
-
-        mlm_labels = p.label_ids[1][:, :mlm_preds.shape[1]]
+        # print(p.label_ids[1].shape)
+        # print(mlm_preds.shape)
+        mlm_labels = p.label_ids[1]#[:, :mlm_preds.shape[1]]
         # secondary_labels = p.label_ids[2]
         # tertiary_labels = p.label_ids[2]
         logs_labels = p.label_ids[0]
@@ -896,7 +900,7 @@ def main():
         #     tertiary_score.append(anomaly_score_sum)
 
 
-        score = [1-top_k_list[i] + 1-tertiary_preds[i][0] for i in range(logs_labels.shape[0])]
+        score = [1-top_k_list[i] + tertiary_preds[i][1] for i in range(logs_labels.shape[0])]
         # print(score)
 
         list_of_anomaly_score = list(filter(lambda x: x != -1, [score[i] if logs_labels[i] == 1 else -1 for i in range(logs_labels.shape[0])]))
@@ -916,8 +920,8 @@ def main():
 
 
     # Data collator will default to DataCollatorWithPadding, so we change it if we already did the padding.
-    # data_collator = DataCollatorForLogsPreTraining(tokenizer, pad_to_multiple_of=8)
-    data_collator = DataCollatorWithPadding(tokenizer, pad_to_multiple_of=8)
+    data_collator = DataCollatorForLogsPreTraining(tokenizer, pad_to_multiple_of=8)
+    # data_collator = DataCollatorWithPadding(tokenizer, pad_to_multiple_of=8)
 
     # Initialize our Trainer
     trainer = Trainer(

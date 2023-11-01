@@ -1906,24 +1906,24 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         
-        input_ids_pri = input_ids[:, :self.max_sentences*self.max_sentence_length]
-        attention_mask_pri = attention_mask[:, :self.max_sentences*self.max_sentence_length]
-        token_type_ids_pri = token_type_ids[:, :self.max_sentences*self.max_sentence_length]
+        # input_ids_pri = input_ids[:, :self.max_sentences*self.max_sentence_length]
+        # attention_mask_pri = attention_mask[:, :self.max_sentences*self.max_sentence_length]
+        # token_type_ids_pri = token_type_ids[:, :self.max_sentences*self.max_sentence_length]
 
         # input_ids_sec = input_ids[:, self.max_sentences*self.max_sentence_length:]
         # attention_mask_sec = attention_mask[:, self.max_sentences*self.max_sentence_length:]
         # token_type_ids_sec = token_type_ids[:, self.max_sentences*self.max_sentence_length:]
 
-        input_ids_ter = input_ids[:, self.max_sentences*self.max_sentence_length:]
-        attention_mask_ter = attention_mask[:, self.max_sentences*self.max_sentence_length:]
-        token_type_ids_ter = token_type_ids[:, self.max_sentences*self.max_sentence_length:]
+        # input_ids_ter = input_ids[:, self.max_sentences*self.max_sentence_length:]
+        # attention_mask_ter = attention_mask[:, self.max_sentences*self.max_sentence_length:]
+        # token_type_ids_ter = token_type_ids[:, self.max_sentences*self.max_sentence_length:]
 
-        primary_labels = primary_labels[:, :self.max_sentences*self.max_sentence_length]
+        # primary_labels = primary_labels[:, :self.max_sentences*self.max_sentence_length]
         
         primary_outputs = self.hi_transformer(
-            input_ids_pri,
-            attention_mask=attention_mask_pri,
-            token_type_ids=token_type_ids_pri,
+            input_ids,
+            attention_mask=attention_mask,
+            token_type_ids=token_type_ids,
             position_ids=position_ids,
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
@@ -1940,20 +1940,20 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
         #     return_dict=return_dict,
         # )
 
-        tertiary_outputs = self.hi_transformer(
-            input_ids_ter,
-            attention_mask=attention_mask_ter,
-            token_type_ids=token_type_ids_ter,
-            position_ids=position_ids,
-            output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
-            return_dict=return_dict,
-        )
+        # tertiary_outputs = self.hi_transformer(
+        #     input_ids_ter,
+        #     attention_mask=attention_mask_ter,
+        #     token_type_ids=token_type_ids_ter,
+        #     position_ids=position_ids,
+        #     output_attentions=output_attentions,
+        #     output_hidden_states=output_hidden_states,
+        #     return_dict=return_dict,
+        # )
 
         # Collect sequence output representations
         primary_sequence_output = primary_outputs[0]
         # secondary_sequence_output = secondary_outputs[0]
-        tertiary_sequence_output = tertiary_outputs[0]
+        tertiary_sequence_output = torch.clone(primary_sequence_output)
 
         # Masked Language Modeling (MLM)
         primary_prediction_scores = None
@@ -1976,7 +1976,8 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
         tertiary_loss = None
         if primary_labels is not None:
             loss_fct = CrossEntropyLoss()
-            masked_lm_loss = loss_fct(torch.reshape(primary_prediction_scores, (-1, self.config.vocab_size)), torch.reshape(primary_labels, (-1,)))
+            # masked_lm_loss = loss_fct(torch.reshape(primary_prediction_scores, (-1, self.config.vocab_size)), torch.reshape(primary_labels, (-1,)))\
+            masked_lm_loss = loss_fct(primary_prediction_scores.view(-1, self.config.vocab_size), primary_labels.view(-1,))
         # if secondary_labels is not None:
         #     loss_fct = CrossEntropyLoss()
         #     secondary_loss = loss_fct(secondary_prediction_scores.view(-1, self.max_sentences), secondary_labels.view(-1))
