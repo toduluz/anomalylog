@@ -1683,6 +1683,7 @@ class HATModelForSimCLRPreTraining(HATPreTrainedModel):
         position_ids=None,
         labels=None,
         secondary_labels=None,
+        log_labels=None,
         sentence_masks=None,
         output_attentions=None,
         output_hidden_states=None,
