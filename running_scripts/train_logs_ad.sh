@@ -15,7 +15,7 @@ SAMPLE=1000
 
 # python3 models/hat/convert_roberta_to_htf.py --layout ${LAYOUT} --max_sentences ${MAX_SENTENCES} --max_sentence_length ${MAX_SENTENCE_LENGTH} \
 
-accelerate launch --main_process_port 29502 evaluation/run_logs_simclr.py \
+accelerate launch --main_process_port 29503 evaluation/run_logs_ad2.py \
     --model_name_or_path data/PLMs/hat-${LAYOUT}-roberta-${MAX_SENTENCES}-${MAX_SENTENCE_LENGTH}-${MODEL_MAX_LENGTH} \
     --dataset_name data/${DATASET_NAME_2} \
     --output_dir data/PLMs/hat/${LAYOUT}-roberta-${MAX_SENTENCES}-${MAX_SENTENCE_LENGTH}-${MODEL_MAX_LENGTH}/${DATASET_NAME_2}/mlm${MLM}-top${TOP_K}-${LR}-win50-ct0-acmgrad4 \
@@ -47,9 +47,9 @@ accelerate launch --main_process_port 29502 evaluation/run_logs_simclr.py \
     --mlm ${MLM} \
     --topk ${TOP_K} \
     --max_steps 500 \
-    --max_eval_samples ${SAMPLE} \
-    --max_predict_samples ${SAMPLE} \
-    --max_train_samples ${SAMPLE} \
+    # --max_eval_samples ${SAMPLE} \
+    # --max_predict_samples ${SAMPLE} \
+    # --max_train_samples ${SAMPLE} \
     # --num_train_epochs 10 \
     # --sr ${SR} \
 

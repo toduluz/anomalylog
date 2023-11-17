@@ -1876,8 +1876,8 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
             config.classifier_dropout if config.classifier_dropout is not None else config.hidden_dropout_prob
         )
         self.dropout = nn.Dropout(classifier_dropout)
-        # self.classifier_secondary = nn.Linear(config.hidden_size, config.max_sentences)
-        self.classifier_tertiary = nn.Linear(config.hidden_size*config.max_sentences, config.num_labels)
+        self.pooler = HATPooler(config, pooling='attentive')
+        self.classifier = nn.Linear(config.hidden_size, config.num_labels)
 
         # self.softmax_sec = nn.Softmax(dim=2)
         self.softmax_ter = nn.Softmax(dim=1)
@@ -1967,9 +1967,13 @@ class HATModelForLogsPreTraining(HATPreTrainedModel):
         # secondary_prediction_scores = self.classifier_secondary(secondary_outputs)
         
         tertiary_prediction_scores = None
-        tertiary_outputs = self.sentencizer(tertiary_sequence_output)
-        tertiary_outputs = self.dropout(tertiary_outputs)
-        tertiary_prediction_scores = self.classifier_tertiary(tertiary_outputs.view(-1, self.hidden_size * self.max_sentences))
+        pooled_output = self.pooler(tertiary_sequence_output[:, ::self.max_sentence_length])
+        pooled_output = self.dropout(pooled_output)
+        tertiary_prediction_scores = self.classifier(pooled_output)
+
+        # tertiary_outputs = self.sentencizer(tertiary_sequence_output)
+        # tertiary_outputs = self.dropout(tertiary_outputs)
+        # tertiary_prediction_scores = self.classifier_tertiary(tertiary_outputs.view(-1, self.hidden_size * self.max_sentences))
 
         total_loss = None
         masked_lm_loss = None

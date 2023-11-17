@@ -298,7 +298,7 @@ def main():
     if 'hat' in model_args.model_name_or_path:
         config = HATConfig.from_pretrained(
             model_args.model_name_or_path,
-            num_labels=data_args.max_sentences,
+            num_labels=2,
             cache_dir=model_args.cache_dir,
             revision=model_args.model_revision,
             use_auth_token=True if model_args.use_auth_token else None,
